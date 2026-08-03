@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "sdk_version": "0.25.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "json-to-pdf-pal",
+      "version": "0.1.0",
+      "title": "JSON to PDF Pal"
+    },
+    "tools": [
+      {
+        "name": "newsletter_schema",
+        "title": "Newsletter item schema",
+        "description": "Describe the JSON item format this app accepts, the navigator sections, category aliases and the default Dutch/English header texts.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "validate_items",
+        "title": "Validate newsletter items",
+        "description": "Validate a JSON array of newsletter items (Dutch or English field names) and report item count, categories and any parse errors.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "json": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Raw JSON text containing an array of newsletter items."
+            },
+            "language": {
+              "type": "string",
+              "enum": [
+                "nl",
+                "en"
+              ],
+              "default": "nl",
+              "description": "Language of the item list."
+            }
+          },
+          "required": [
+            "json"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "outline_newsletter",
+        "title": "Outline newsletter",
+        "description": "Group a JSON array of newsletter items into the newsletter's navigator sections (News, Meetings, Open calls) and return the resulting outline of titles.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "json": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Raw JSON text containing an array of newsletter items."
+            },
+            "language": {
+              "type": "string",
+              "enum": [
+                "nl",
+                "en"
+              ],
+              "default": "nl",
+              "description": "Language of the item list."
+            }
+          },
+          "required": [
+            "json"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
