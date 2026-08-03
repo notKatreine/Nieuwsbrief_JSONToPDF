@@ -1,5 +1,7 @@
-import logoAsset from "@/assets/rsologo";
-import coverAsset from "@/assets/coverillustration.jpeg";
+#import logoAsset from "@/assets/rsologo.jpeg";
+const logoSrc = "/rsologo.jpeg";
+#import coverAsset from "@/assets/coverillustration.jpeg";
+const coverSrc = "/coverillustration.jpeg"
 import { buildDocument, type BuildAssets } from "./pdf";
 import type { NewsletterState } from "./types";
 
@@ -50,8 +52,8 @@ async function toDataUrl(url: string): Promise<string | null> {
 
 export async function loadAssets(): Promise<BuildAssets> {
   const [logo, cover] = await Promise.all([
-    toDataUrl(logoAsset.url),
-    toDataUrl(coverAsset.url),
+    toDataUrl("/rsologo.jpeg"),
+    toDataUrl("/coverillustration.jpeg"),
   ]);
   return { logo, cover };
 }
