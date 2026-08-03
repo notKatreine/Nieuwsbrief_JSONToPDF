@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { UploadDropzone } from "@/components/newsletter/UploadDropzone";
 import { SectionNavigatorEditor } from "@/components/newsletter/SectionNavigatorEditor";
+import { CategoryLabelEditor } from "@/components/newsletter/CategoryLabelEditor";
 import { ItemEditor } from "@/components/newsletter/ItemEditor";
 import { ChecksPanel } from "@/components/newsletter/ChecksPanel";
 import { PdfPreview } from "@/components/newsletter/PdfPreview";
 import { useNewsletterState } from "@/lib/newsletter/use-newsletter-state";
 import { downloadPdf } from "@/lib/newsletter/pdf-runtime";
+import { categoryKeyOf } from "@/lib/newsletter/types";
 import type { Lang } from "@/lib/newsletter/types";
 import {
   findingsByItem,
@@ -62,6 +64,8 @@ function NewsletterBuilder() {
     addItem,
     copyToOtherLanguage,
     dismissFinding,
+    dismissAllFindings,
+    setCategoryLabels,
     setSections,
     patch,
     reset,
@@ -189,7 +193,12 @@ function NewsletterBuilder() {
           </section>
 
           {hasContent && (
-            <ChecksPanel findings={findings} onDismiss={dismissFinding} onJump={jumpToItem} />
+            <ChecksPanel
+              findings={findings}
+              onDismiss={dismissFinding}
+              onDismissAll={dismissAllFindings}
+              onJump={jumpToItem}
+            />
           )}
 
 
@@ -315,6 +324,19 @@ function NewsletterBuilder() {
               allCategories={allCategories}
               onChange={setSections}
             />
+
+            <div className="mt-4 border-t border-border pt-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Category labels
+              </h3>
+              <CategoryLabelEditor
+                labels={state.categoryLabels}
+                usedKeys={allCategories.map((category) =>
+                  categoryKeyOf(state.categoryLabels, category),
+                )}
+                onChange={setCategoryLabels}
+              />
+            </div>
           </section>
 
           <section className="rounded-xl border border-border bg-card p-4">

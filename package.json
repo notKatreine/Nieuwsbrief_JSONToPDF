@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.8.1",
+    "@lovable.dev/vite-tanstack-config": "2.8.5",
     "@types/node": "^22.16.5",
     "@types/pdfmake": "^0.3.3",
     "@types/react": "^19.2.0",
@@ -87,8 +87,5 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16"
-  },
-  "allowScripts": {
-    "esbuild@0.27.7": true
   }
 }

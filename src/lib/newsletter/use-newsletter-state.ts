@@ -4,7 +4,10 @@ import { sampleEn, sampleNl } from "./sample-data";
 import {
   DEFAULT_HEADER_EN,
   DEFAULT_HEADER_NL,
+  DEFAULT_CATEGORY_LABELS,
   DEFAULT_SECTIONS,
+  syncCategoryLabels,
+  type CategoryLabel,
   type Item,
   type Lang,
   type NavSection,
@@ -39,6 +42,7 @@ export function emptyState(): NewsletterState {
     headerEn: { ...DEFAULT_HEADER_EN },
     sections: DEFAULT_SECTIONS.map((section) => ({ ...section, categories: [...section.categories] })),
     dismissedFindings: [],
+    categoryLabels: DEFAULT_CATEGORY_LABELS.map((label) => ({ ...label })),
   };
 }
 
@@ -71,6 +75,10 @@ export function useNewsletterState() {
           ...parsed,
           headerNl: { ...DEFAULT_HEADER_NL, ...parsed.headerNl },
           headerEn: { ...DEFAULT_HEADER_EN, ...parsed.headerEn },
+          categoryLabels:
+            parsed.categoryLabels && parsed.categoryLabels.length > 0
+              ? parsed.categoryLabels
+              : DEFAULT_CATEGORY_LABELS.map((label) => ({ ...label })),
         });
       }
     } catch {
@@ -169,6 +177,21 @@ export function useNewsletterState() {
     [commit],
   );
 
+  const dismissAllFindings = useCallback(
+    (findingIds: string[]) => {
+      commit((prev) => {
+        const next = new Set([...prev.dismissedFindings, ...findingIds]);
+        return { ...prev, dismissedFindings: [...next] };
+      });
+    },
+    [commit],
+  );
+
+
+
+  const setCategoryLabels = useCallback((categoryLabels: CategoryLabel[]) => {
+    commit((prev) => ({ ...prev, categoryLabels }));
+  }, []);
 
   const setSections = useCallback((sections: NavSection[]) => {
     commit((prev) => ({ ...prev, sections }));
@@ -189,6 +212,15 @@ export function useNewsletterState() {
     return seen.sort((a, b) => a.localeCompare(b));
   }, [state.nl, state.en]);
 
+  // Keep a label pair for every category that shows up in the data.
+  useEffect(() => {
+    if (!hydrated) return;
+    setState((prev) => {
+      const next = syncCategoryLabels(prev.categoryLabels, allCategories);
+      return next === prev.categoryLabels ? prev : { ...prev, categoryLabels: next };
+    });
+  }, [hydrated, allCategories]);
+
   return {
     state,
     hydrated,
@@ -200,6 +232,8 @@ export function useNewsletterState() {
     addItem,
     copyToOtherLanguage,
     dismissFinding,
+    dismissAllFindings,
+    setCategoryLabels,
     setSections,
     patch,
     reset,

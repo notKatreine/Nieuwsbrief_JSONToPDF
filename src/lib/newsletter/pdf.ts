@@ -1,5 +1,5 @@
-import { MONTHS_EN } from "./types";
-import type { Item, Lang, NavSection, NewsletterState } from "./types";
+import { MONTHS_EN, categoryKeyOf, categoryLabelFor } from "./types";
+import type { CategoryLabel, Item, Lang, NavSection, NewsletterState } from "./types";
 
 /* ------------------------------------------------------------------ *
  * Layout constants (A4, points)
@@ -81,7 +81,8 @@ export function groupBySection(items: Item[], sections: NavSection[], lang: Lang
  * ------------------------------------------------------------------ */
 type Block =
   | { kind: "heading"; height: number; label: string; destination: string }
-  | { kind: "item"; height: number; item: Item; lang: Lang };
+  | { kind: "subtitle"; height: number; label: string; destination: string }
+  | { kind: "item"; height: number; item: Item; lang: Lang; anchor?: string };
 
 const CHAR_W = 4.5; // average glyph width at 9pt
 
@@ -103,13 +104,32 @@ function itemHeight(item: Item): number {
   return (
     textHeight(heading, 9.5, 12, true) +
     textHeight(item.description, 9, 11.5) +
-    (item.deadline ? 12 : 0) +
+    (item.deadline ? 15 : 0) +
     12
   );
 }
 
 
-function toBlocks(groups: SectionGroup[], lang: Lang): Block[] {
+/** Categories present in a group, ordered by the section's configured order. */
+function groupCategories(group: SectionGroup): string[] {
+  const present: string[] = [];
+  const seen = new Set<string>();
+  const push = (category: string) => {
+    const key = category.toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    present.push(category);
+  };
+  for (const configured of group.section.categories) {
+    if (group.items.some((item) => item.category.toLowerCase() === configured.toLowerCase())) {
+      push(configured);
+    }
+  }
+  for (const item of group.items) push(item.category);
+  return present;
+}
+
+function toBlocks(groups: SectionGroup[], lang: Lang, labels: CategoryLabel[]): Block[] {
   const blocks: Block[] = [];
   for (const group of groups) {
     blocks.push({
@@ -118,8 +138,31 @@ function toBlocks(groups: SectionGroup[], lang: Lang): Block[] {
       label: group.label.toUpperCase(),
       destination: destSection(group.section.id, lang),
     });
+    const categories = groupCategories(group);
+    const showSubtitles = categories.length > 1;
+    const seen = new Set<string>();
     for (const item of group.items) {
-      blocks.push({ kind: "item", height: itemHeight(item), item, lang });
+      const key = categoryKeyOf(labels, item.category);
+      const first = !seen.has(key);
+      seen.add(key);
+      const destination = destCategory(group.section.id, key, lang);
+      if (first && showSubtitles) {
+        blocks.push({
+          kind: "subtitle",
+          height: 20,
+          label: categoryLabelFor(labels, item.category, lang),
+          destination,
+        });
+        blocks.push({ kind: "item", height: itemHeight(item), item, lang });
+      } else {
+        blocks.push({
+          kind: "item",
+          height: itemHeight(item),
+          item,
+          lang,
+          anchor: first ? destination : undefined,
+        });
+      }
     }
   }
   return blocks;
@@ -147,13 +190,28 @@ function packPages(blocks: Block[]): PackedPage[] {
     used = 0;
   };
 
-  for (const block of blocks) {
-    // Never orphan a section heading at the foot of a column.
-    const needed = block.kind === "heading" ? block.height + 70 : block.height;
-    if (used > 0 && used + needed > BODY_H - 24) advance();
+  // A heading or subtitle must never be the last thing in a column: measure it
+  // together with the block(s) that must follow it.
+  const requiredHeight = (index: number): number => {
+    const block = blocks[index];
+    if (!block) return 0;
+    if (block.kind === "item") return block.height;
+    const next = blocks[index + 1];
+    if (!next) return block.height;
+    if (block.kind === "heading" && next.kind === "subtitle") {
+      const after = blocks[index + 2];
+      return block.height + next.height + (after && after.kind === "item" ? after.height : 0);
+    }
+    return block.height + next.height;
+  };
+
+  for (let i = 0; i < blocks.length; i += 1) {
+    const block = blocks[i];
+    if (used > 0 && used + requiredHeight(i) > BODY_H - 24) advance();
     page[column].push(block);
     used += block.height;
   }
+
 
   if (page.left.length > 0 || page.right.length > 0) pages.push(page);
   return pages;
@@ -164,6 +222,13 @@ function packPages(blocks: Block[]): PackedPage[] {
  * ------------------------------------------------------------------ */
 const destCover = (lang: Lang) => `cover-${lang}`;
 const destSection = (sectionId: string, lang: Lang) => `${sectionId}-${lang}`;
+const slug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+const destCategory = (sectionId: string, categoryKey: string, lang: Lang) =>
+  `${sectionId}-cat-${slug(categoryKey)}-${lang}`;
 
 /* ------------------------------------------------------------------ *
  * Content renderers
@@ -181,6 +246,17 @@ function renderBlock(block: Block): Node {
     };
   }
 
+  if (block.kind === "subtitle") {
+    return {
+      id: block.destination,
+      text: block.label,
+      style: "categorySubtitle",
+      margin: [0, 2, 0, 6],
+    };
+  }
+
+
+
   const { item } = block;
   const headingText = `${item.organization ? `${item.organization} | ` : ""}${item.title}`;
   const deadlineLabel = block.lang === "nl" ? "Sluitingsdatum" : "Deadline";
@@ -188,21 +264,26 @@ function renderBlock(block: Block): Node {
   const stack: Node[] = [
     item.url
       ? {
+          ...(block.anchor ? { id: block.anchor } : {}),
           text: headingText,
           link: item.url,
           style: "itemTitleLink",
         }
-      : { text: headingText, style: "itemTitle" },
+      : {
+          ...(block.anchor ? { id: block.anchor } : {}),
+          text: headingText,
+          style: "itemTitle",
+        },
   ];
 
   if (item.description) {
-    stack.push({ text: item.description, style: "itemBody" });
+    stack.push({ text: linkifyEmails(item.description), style: "itemBody" });
   }
   if (item.deadline) {
     stack.push({
       text: [
         { text: `${deadlineLabel}: `, bold: true },
-        { text: item.deadline },
+        { text: item.deadline, bold: true },
       ],
       style: "itemDeadline",
     });
@@ -268,16 +349,72 @@ function renderCover(
   coverImage: string | null,
 ): Node {
   const header = lang === "nl" ? state.headerNl : state.headerEn;
-  const nav: Node[] = [];
-  groups.forEach((group, index) => {
-    if (index > 0) nav.push({ text: "  |  ", color: "#FFFFFF" });
-    nav.push({
-      text: group.label,
-      linkToDestination: destSection(group.section.id, lang),
-      color: PANEL_LINK,
-      decoration: "underline",
-    });
+
+  // Rounded red panel: pdfmake tables cannot round corners, so we draw a
+  // rounded canvas of an estimated height and overlay the text on top.
+  const panelW = PAGE_W - 2 * (SIDE + 4);
+  const innerW = panelW - 44;
+  const wrapped = (text: string, fontSize: number) => {
+    // Conservative: assume slightly wide glyphs and add one line of slack per
+    // paragraph so long intros/reminders never spill outside the panel.
+    const perLine = Math.max(12, Math.floor(innerW / (CHAR_W * (fontSize / 9) * 1.18)));
+    return text
+      .split("\n")
+      .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / perLine)) + 0.3, 0);
+  };
+
+  // Navigator: collect entries, then wrap them into explicit lines so the
+  // measured height always matches what is rendered.
+  const entries: { text: string; destination: string }[] = [];
+  groups.forEach((group) => {
+    entries.push({ text: group.label, destination: destSection(group.section.id, lang) });
+    const categories = groupCategories(group);
+    if (categories.length > 1) {
+      categories.forEach((category) =>
+        entries.push({
+          text: categoryLabelFor(state.categoryLabels, category, lang),
+          destination: destCategory(
+            group.section.id,
+            categoryKeyOf(state.categoryLabels, category),
+            lang,
+          ),
+        }),
+      );
+    }
   });
+
+  const NAV_CHAR_W = CHAR_W * (9.5 / 9) * 1.18 * 1.06; // bold glyphs run wider
+  const navPerLine = Math.max(20, Math.floor(innerW / NAV_CHAR_W));
+  const navLines: { text: string; destination: string }[][] = [];
+  let currentLine: { text: string; destination: string }[] = [];
+  let currentLen = 0;
+  for (const entry of entries) {
+    const cost = entry.text.length + 5; // separator "  |  "
+    if (currentLine.length > 0 && currentLen + cost > navPerLine) {
+      navLines.push(currentLine);
+      currentLine = [];
+      currentLen = 0;
+    }
+    currentLine.push(entry);
+    currentLen += cost;
+  }
+  if (currentLine.length > 0) navLines.push(currentLine);
+
+  const navNodes: Node[] = navLines.map((line, lineIndex) => ({
+    text: line.flatMap((entry, index) => {
+      const runs: Node[] = [];
+      if (index > 0) runs.push({ text: "  |  ", color: "#FFFFFF" });
+      runs.push({
+        text: entry.text,
+        linkToDestination: entry.destination,
+        color: PANEL_LINK,
+        decoration: "underline",
+      });
+      return runs;
+    }),
+    style: "panelBold",
+    margin: [0, lineIndex === 0 ? 12 : 3, 0, 0],
+  }));
 
   const introLines = header.intro
     .split("\n")
@@ -290,7 +427,7 @@ function renderCover(
     margin: [0, index === 0 ? 0 : 8, 0, 0],
   }));
 
-  panelBody.push({ text: nav, style: "panelBold", margin: [0, 12, 0, 0] });
+  panelBody.push(...navNodes);
 
   if (header.reminder) {
     panelBody.push({
@@ -312,27 +449,17 @@ function renderCover(
     margin: [0, 14, 0, 0],
   });
 
-  // Rounded red panel: pdfmake tables cannot round corners, so we draw a
-  // rounded canvas of an estimated height and overlay the text on top.
-  const panelW = PAGE_W - 2 * (SIDE + 4);
-  const innerW = panelW - 44;
-  const wrapped = (text: string, fontSize: number) => {
-    // Conservative: assume slightly wide glyphs and add one line of slack per
-    // paragraph so long intros/reminders never spill outside the panel.
-    const perLine = Math.max(12, Math.floor(innerW / (CHAR_W * (fontSize / 9) * 1.18)));
-    return text
-      .split("\n")
-      .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / perLine)) + 0.3, 0);
-  };
   let panelH = 52; // top + bottom padding
   introLines.forEach((line, index) => {
     panelH += wrapped(line, 9.5) * 12 + (index === 0 ? 0 : 8);
   });
-  panelH += 12 + wrapped(groups.map((group) => group.label).join("  |  "), 9.5) * 12; // navigator
+  // navigator: one measured line each, plus its top margins
+  panelH += 12 + navLines.length * 13 + Math.max(0, navLines.length - 1) * 3;
   if (header.reminder) panelH += 14 + wrapped(header.reminder, 9.5) * 12;
   panelH += 14 + 12; // contact line
-  panelH += 12; // safety
+  panelH += 14; // safety
   panelH = Math.round(panelH);
+
 
   const panel: Node = {
     unbreakable: true,
@@ -427,8 +554,9 @@ export interface BuiltDocument {
 export function buildDocument(state: NewsletterState, assets: BuildAssets): BuiltDocument {
   const nlGroups = groupBySection(state.nl, state.sections, "nl");
   const enGroups = groupBySection(state.en, state.sections, "en");
-  const nlPages = packPages(toBlocks(nlGroups, "nl"));
-  const enPages = packPages(toBlocks(enGroups, "en"));
+  const labels = state.categoryLabels ?? [];
+  const nlPages = packPages(toBlocks(nlGroups, "nl", labels));
+  const enPages = packPages(toBlocks(enGroups, "en", labels));
 
   const pageLangs: Lang[] = [
     "nl",
@@ -584,10 +712,11 @@ export function buildDocument(state: NewsletterState, assets: BuildAssets): Buil
       coverNote: { fontSize: 9.5 },
 
       sectionHeading: { fontSize: 11, bold: true, color: RED, characterSpacing: 0.4 },
+      categorySubtitle: { fontSize: 9.5, bold: true, color: RED, characterSpacing: 0.3 },
       itemTitle: { fontSize: 9.5, bold: true },
       itemTitleLink: { fontSize: 9.5, bold: true, color: LINK, decoration: "underline" },
       itemBody: { fontSize: 9, margin: [0, 2, 0, 0] },
-      itemDeadline: { fontSize: 9, margin: [0, 2, 0, 0] },
+      itemDeadline: { fontSize: 11, margin: [0, 3, 0, 0] },
     },
   };
 

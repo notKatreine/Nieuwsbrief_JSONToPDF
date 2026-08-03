@@ -69,6 +69,8 @@ export interface NewsletterState {
   sections: NavSection[];
   /** Ids of validation warnings the user chose to hide. */
   dismissedFindings: string[];
+  /** Dutch/English label pairs for the item categories. */
+  categoryLabels: CategoryLabel[];
 }
 
 export const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -113,3 +115,78 @@ export const DEFAULT_HEADER_EN: LangHeader = {
   reminder:
     "As a reminder, it is mandatory to involve the ProjectBureau projectbureau@ou.nl in the application process. The ProjectBureau provides a solid budget, which is in coordination with the faculty and guides the process for approval of the project by the rector magnificus (so-called CvB checklist).",
 };
+
+/** One category shown with a Dutch and an English label. */
+export interface CategoryLabel {
+  /** Stable key (slug of the Dutch label) used for anchors and lookups. */
+  key: string;
+  labelNl: string;
+  labelEn: string;
+}
+
+export const DEFAULT_CATEGORY_LABELS: CategoryLabel[] = [
+  { key: "nieuws", labelNl: "Nieuws", labelEn: "News" },
+  { key: "bijeenkomsten", labelNl: "Bijeenkomsten", labelEn: "Meetings" },
+  { key: "nwo", labelNl: "NWO", labelEn: "NWO" },
+  { key: "zonmw", labelNl: "ZonMW", labelEn: "ZonMW" },
+  { key: "internationaal", labelNl: "Internationaal", labelEn: "International" },
+  { key: "overige", labelNl: "Overige", labelEn: "Other" },
+  { key: "intern", labelNl: "Intern", labelEn: "Internal" },
+];
+
+/** Extra spellings that should resolve to an existing category key. */
+const CATEGORY_KEY_HINTS: Record<string, string> = {
+  events: "bijeenkomsten",
+  meeting: "bijeenkomsten",
+  internal: "intern",
+};
+
+export const categorySlug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+/** Resolve a raw category name (either language) to its stable key. */
+export function categoryKeyOf(labels: CategoryLabel[], category: string): string {
+  const needle = category.trim().toLowerCase();
+  if (!needle) return "";
+  const match = labels.find(
+    (label) =>
+      label.labelNl.trim().toLowerCase() === needle ||
+      label.labelEn.trim().toLowerCase() === needle ||
+      label.key === needle,
+  );
+  if (match) return match.key;
+  return CATEGORY_KEY_HINTS[needle] ?? categorySlug(category);
+}
+
+/** Label to display for a raw category name in the given language. */
+export function categoryLabelFor(
+  labels: CategoryLabel[],
+  category: string,
+  lang: Lang,
+): string {
+  const key = categoryKeyOf(labels, category);
+  const match = labels.find((label) => label.key === key);
+  if (!match) return category;
+  const label = lang === "nl" ? match.labelNl : match.labelEn;
+  return label.trim() || category;
+}
+
+/** Add pairs for any category found in the data that has no entry yet. */
+export function syncCategoryLabels(
+  labels: CategoryLabel[],
+  categories: string[],
+): CategoryLabel[] {
+  let next = labels;
+  for (const category of categories) {
+    const name = category.trim();
+    if (!name) continue;
+    const key = categoryKeyOf(next, name);
+    if (next.some((label) => label.key === key)) continue;
+    next = next === labels ? [...labels] : next;
+    next.push({ key, labelNl: name, labelEn: name });
+  }
+  return next;
+}
