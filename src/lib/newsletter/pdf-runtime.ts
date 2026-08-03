@@ -1,5 +1,5 @@
-import logoAsset from "@/assets/rso-logo.jpeg";
-import coverAsset from "@/assets/cover-illustration.jpeg";
+import logoAsset from "@/assets/rsologo";
+import coverAsset from "@/assets/coverillustration.jpeg";
 import { buildDocument, type BuildAssets } from "./pdf";
 import type { NewsletterState } from "./types";
 
