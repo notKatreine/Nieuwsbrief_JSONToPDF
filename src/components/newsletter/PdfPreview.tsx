@@ -97,20 +97,13 @@ export function PdfPreview({ state }: Props) {
       ) : pages.length ? (
         <div ref={containerRef} className="flex-1 space-y-4 overflow-auto p-4">
           {pages.map((src, index) => (
-            <img
-              key={index}
-              src="/rsologo.jpeg"
-              #alt={`Newsletter page ${index + 1}`}
-			  alt= "RSO logo"
-              className="mx-auto w-full max-w-full rounded-md border border-border bg-card shadow-sm"
-            />
-			<img
-              key={index}
-              src="/coverillustration.jpeg"
-              #alt={`Newsletter page ${index + 1}`}
-			  alt= "Cover illustration"
-              className="mx-auto w-full max-w-full rounded-md border border-border bg-card shadow-sm"
-            />
+            <div key={index} className="space-y-4">
+              <img
+                src={src || "/rsologo.jpeg"}
+                alt={`Newsletter page ${index + 1}`}
+                className="mx-auto w-full max-w-full rounded-md border border-border bg-card shadow-sm"
+              />
+            </div>
           ))}
         </div>
       ) : (

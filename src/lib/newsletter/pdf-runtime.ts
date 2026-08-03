@@ -1,6 +1,4 @@
-#import logoAsset from "@/assets/rsologo.jpeg";
 const logoSrc = "/rsologo.jpeg";
-#import coverAsset from "@/assets/coverillustration.jpeg";
 const coverSrc = "/coverillustration.jpeg"
 import { buildDocument, type BuildAssets } from "./pdf";
 import type { NewsletterState } from "./types";
@@ -31,6 +29,7 @@ async function getPdfMake() {
 const dataUrlCache = new Map<string, string>();
 
 async function toDataUrl(url: string): Promise<string | null> {
+  if (!url || url === "undefined") return "";
   const cached = dataUrlCache.get(url);
   if (cached) return cached;
   try {
@@ -50,7 +49,7 @@ async function toDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export async function loadAssets(): Promise<BuildAssets> {
+export async function loadAssets() {
   const [logo, cover] = await Promise.all([
     toDataUrl("/rsologo.jpeg"),
     toDataUrl("/coverillustration.jpeg"),
