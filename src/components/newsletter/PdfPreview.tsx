@@ -99,8 +99,16 @@ export function PdfPreview({ state }: Props) {
           {pages.map((src, index) => (
             <img
               key={index}
-              src={src}
-              alt={`Newsletter page ${index + 1}`}
+              src="/rsologo.jpeg"
+              #alt={`Newsletter page ${index + 1}`}
+			  alt= "RSO logo"
+              className="mx-auto w-full max-w-full rounded-md border border-border bg-card shadow-sm"
+            />
+			<img
+              key={index}
+              src="/coverillustration.jpeg"
+              #alt={`Newsletter page ${index + 1}`}
+			  alt= "Cover illustration"
               className="mx-auto w-full max-w-full rounded-md border border-border bg-card shadow-sm"
             />
           ))}
