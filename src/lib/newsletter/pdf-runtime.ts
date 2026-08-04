@@ -1,6 +1,5 @@
 const logoSrc = "/rsologo.jpeg";
 const coverSrc = "/coverillustration.jpeg"
-=======
 import logoAsset from "@/assets/rsologo.jpeg";
 import coverAsset from "@/assets/coverillustration.jpeg";
 import { buildDocument, type BuildAssets } from "./pdf";
