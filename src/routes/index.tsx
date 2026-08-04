@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Panel } from "@/components/newsletter/Panel";
 import { UploadDropzone } from "@/components/newsletter/UploadDropzone";
 import { SectionNavigatorEditor } from "@/components/newsletter/SectionNavigatorEditor";
 import { CategoryLabelEditor } from "@/components/newsletter/CategoryLabelEditor";
@@ -172,10 +173,7 @@ function NewsletterBuilder() {
 
       <div className="mx-auto grid max-w-[1500px] gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">
-          <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              1. Source files
-            </h2>
+          <Panel step="1" title="Source files">
             <div className="grid gap-3 sm:grid-cols-2">
               <UploadDropzone
                 lang="nl"
@@ -190,7 +188,7 @@ function NewsletterBuilder() {
                 onLoaded={(items) => setItems("en", items)}
               />
             </div>
-          </section>
+          </Panel>
 
           {hasContent && (
             <ChecksPanel
@@ -203,10 +201,7 @@ function NewsletterBuilder() {
 
 
 
-          <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              2. Header
-            </h2>
+          <Panel step="2" title="Header">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label className="text-xs" htmlFor="month">
@@ -313,19 +308,16 @@ function NewsletterBuilder() {
                 />
               </div>
             </div>
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              3. Section navigator
-            </h2>
+          <Panel step="3" title="Section navigator">
             <SectionNavigatorEditor
               sections={state.sections}
               allCategories={allCategories}
               onChange={setSections}
             />
 
-            <div className="mt-4 border-t border-border pt-4">
+            <div className="mt-4 rounded-lg border border-border bg-muted/40 p-3">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Category labels
               </h3>
@@ -337,17 +329,17 @@ function NewsletterBuilder() {
                 onChange={setCategoryLabels}
               />
             </div>
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border border-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                4. Items
-              </h2>
+          <Panel
+            step="4"
+            title="Items"
+            action={
               <Button variant="outline" size="sm" onClick={handleAddItem}>
                 <Plus className="mr-1.5 h-4 w-4" /> Add item
               </Button>
-            </div>
+            }
+          >
             <Tabs value={lang} onValueChange={(value) => setLang(value as Lang)}>
               <TabsList>
                 <TabsTrigger value="nl">Dutch ({state.nl.length})</TabsTrigger>
@@ -382,7 +374,7 @@ function NewsletterBuilder() {
                 />
               </TabsContent>
             </Tabs>
-          </section>
+          </Panel>
 
         </div>
 

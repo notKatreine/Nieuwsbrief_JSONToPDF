@@ -95,7 +95,7 @@ export function PdfPreview({ state }: Props) {
       {error ? (
         <p className="p-4 text-sm text-destructive">{error}</p>
       ) : pages.length ? (
-        <div ref={containerRef} className="flex-1 space-y-4 overflow-auto p-4">
+		<div ref={containerRef} className="flex-1 space-y-4 overflow-auto p-4">
           {pages.map((src, index) => (
             <div key={index} className="space-y-4">
               <img

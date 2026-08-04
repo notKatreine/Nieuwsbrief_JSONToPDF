@@ -57,11 +57,16 @@ export function ItemEditor({
         ))}
       </datalist>
 
-      <Accordion type="multiple" className="w-full" value={open} onValueChange={onOpenChange}>
+      <Accordion
+        type="multiple"
+        className="w-full divide-y-2 divide-border overflow-hidden rounded-lg border-2 border-border"
+        value={open}
+        onValueChange={onOpenChange}
+      >
         {items.map((item, index) => {
           const severity = itemSeverity[item.id];
           return (
-            <AccordionItem key={item.id} value={item.id}>
+            <AccordionItem key={item.id} value={item.id} className="border-b-0 px-3 last:border-b-0">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <AccordionTrigger className="min-w-0 py-3 text-left">
                   <span className="flex min-w-0 flex-col">

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 const logoSrc = "/rsologo.jpeg";
 const coverSrc = "/coverillustration.jpeg"
+=======
+import logoAsset from "@/assets/rsologo.jpeg";
+import coverAsset from "@/assets/coverillustration.jpeg";
+>>>>>>> 39b3a559a32b2d5342bacf57c47db8618afcf7ca
 import { buildDocument, type BuildAssets } from "./pdf";
 import type { NewsletterState } from "./types";
 
@@ -29,7 +34,6 @@ async function getPdfMake() {
 const dataUrlCache = new Map<string, string>();
 
 async function toDataUrl(url: string): Promise<string | null> {
-  if (!url || url === "undefined") return "";
   const cached = dataUrlCache.get(url);
   if (cached) return cached;
   try {

@@ -9,8 +9,14 @@ const asString = (value: unknown): string =>
 export class ParseError extends Error {}
 
 function pick(row: Record<string, unknown>, keys: string[]): string | null {
+  // Match keys case-insensitively and ignoring spaces/underscores, so
+  // "Organisation" or "organisation " still resolves.
+  const norm = (value: string) => value.toLowerCase().replace(/[\s_-]+/g, "");
+  const lookup = new Map<string, unknown>();
+  for (const [key, value] of Object.entries(row)) lookup.set(norm(key), value);
   for (const key of keys) {
-    if (key in row) return asString(row[key]);
+    const normalised = norm(key);
+    if (lookup.has(normalised)) return asString(lookup.get(normalised));
   }
   return null;
 }
@@ -42,10 +48,11 @@ export function parseItems(json: unknown, lang: Lang): Item[] {
       id: nextId(lang),
       category: category || "Overige",
       title,
-      organization: pick(row, ["organisatie", "organization"]) ?? "",
-      description: pick(row, ["beschrijving", "description"]) ?? "",
-      deadline: pick(row, ["deadline"]) ?? "",
-      url: pick(row, ["url"]) ?? "",
+      organization:
+        pick(row, ["organisatie", "organization", "organisation", "org"]) ?? "",
+      description: pick(row, ["beschrijving", "omschrijving", "description"]) ?? "",
+      deadline: pick(row, ["deadline", "sluitingsdatum", "closingdate", "date"]) ?? "",
+      url: pick(row, ["url", "link", "website"]) ?? "",
       included: true,
     };
   });

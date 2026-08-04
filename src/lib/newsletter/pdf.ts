@@ -104,7 +104,7 @@ function itemHeight(item: Item): number {
   return (
     textHeight(heading, 9.5, 12, true) +
     textHeight(item.description, 9, 11.5) +
-    (item.deadline ? 15 : 0) +
+    (item.deadline ? 14 : 0) +
     12
   );
 }
@@ -282,7 +282,7 @@ function renderBlock(block: Block): Node {
   if (item.deadline) {
     stack.push({
       text: [
-        { text: `${deadlineLabel}: `, bold: true },
+        { text: `${deadlineLabel}: `, bold: true, color: RED },
         { text: item.deadline, bold: true },
       ],
       style: "itemDeadline",
@@ -704,19 +704,19 @@ export function buildDocument(state: NewsletterState, assets: BuildAssets): Buil
       barLink: { color: "#FFFFFF", fontSize: 11, decoration: "underline" },
       coverTitle: { fontSize: 22, bold: true, color: RED },
       coverTitleSoft: { fontSize: 25, color: COVER_TITLE, alignment: "center", lineHeight: 1.1 },
-      panelText: { fontSize: 9.5, color: "#FFFFFF" },
-      panelBold: { fontSize: 9.5, bold: true, color: "#FFFFFF" },
+      panelText: { fontSize: 9.5, color: "#FFFFFF", lineHeight: 1.2 },
+      panelBold: { fontSize: 9.5, bold: true, color: "#FFFFFF", lineHeight: 1.2 },
       coverIntro: { fontSize: 10.5, margin: [0, 0, 0, 8] },
       coverIntroFramed: { fontSize: 10.5 },
       coverNav: { fontSize: 10.5, bold: true },
       coverNote: { fontSize: 9.5 },
 
-      sectionHeading: { fontSize: 11, bold: true, color: RED, characterSpacing: 0.4 },
-      categorySubtitle: { fontSize: 9.5, bold: true, color: RED, characterSpacing: 0.3 },
-      itemTitle: { fontSize: 9.5, bold: true },
-      itemTitleLink: { fontSize: 9.5, bold: true, color: LINK, decoration: "underline" },
-      itemBody: { fontSize: 9, margin: [0, 2, 0, 0] },
-      itemDeadline: { fontSize: 11, margin: [0, 3, 0, 0] },
+      sectionHeading: { fontSize: 11, bold: true, color: RED, characterSpacing: 0.4, lineHeight: 1.15 },
+      categorySubtitle: { fontSize: 9.5, bold: true, color: RED, lineHeight: 1.15 },
+      itemTitle: { fontSize: 9.5, bold: true, lineHeight: 1.15 },
+      itemTitleLink: { fontSize: 9.5, bold: true, color: LINK, decoration: "underline", lineHeight: 1.15 },
+      itemBody: { fontSize: 9, lineHeight: 1.15, margin: [0, 2, 0, 0] },
+      itemDeadline: { fontSize: 9.5, lineHeight: 1.15, margin: [0, 3, 0, 0] },
     },
   };
 
